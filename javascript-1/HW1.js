@@ -21,13 +21,13 @@ function sum(value1) {
 }
 
 let a1 = sum();
-console.log(a1);
+console.log(a1);  // 0
 
 let a2 = sum(1)();
-console.log(a2);
+console.log(a2);  // 1
 
 let a3 = sum(1)(2)();
-console.log(a3);
+console.log(a3);  // 1 + 2 = 3
 
 let a4 = sum(1)(2)(3)(4)(5)(6)();
-console.log(a4);
+console.log(a4);  // 1 + 2 + 3 + 4 + 5 + 6 = 21
