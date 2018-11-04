@@ -40,10 +40,15 @@ function promiseReduceSimple(asyncFunctions, reduce, initialValue) {
     });
 }
 
-function promiseReduce1(asyncFunctions, reduce, initialValue) {
+// а эта более честная функция - решение ДЗ
+function promiseReduce(asyncFunctions, reduce, initialValue) {
+    if (asyncFunctions.length === 0) {
+        return initialValue;
+    }
+
     // Эта функция выполняет асинхронную функцию, после чего выполняет свёртку
     // и возвращает новое значение аккумулятора
-    let innerFunc = function (asyncFunction, reduce, accumulator) {
+    let invokeAsyncFunc = function (asyncFunction, reduce, accumulator) {
         return new Promise((resolve) => {
             asyncFunction()
                 .then(result => reduce(accumulator, result))
@@ -51,33 +56,33 @@ function promiseReduce1(asyncFunctions, reduce, initialValue) {
         });
     }
 
-    let count = asyncFunctions.length;
-
-    // Рекурсивная функция должна отработать примерно так
-    // return innerFunc(asyncFunctions[0], reduce, accumulator)
-    //     .then(accumulator => innerFunc(asyncFunctions[1], reduce, accumulator))
-    //     .then(accumulator => innerFunc(asyncFunctions[2], reduce, accumulator));
-
-    let recursiveFunc = function (prevPromise, reduce, accumulator, index) {
+    // Рекурсивная функция свёртки должна отработать примерно так (на примере 3-х функций):
+    // return invokeAsyncFunc(asyncFunctions[0], reduce, accumulator)
+    //     .then(accumulator => invokeAsyncFunc(asyncFunctions[1], reduce, accumulator))
+    //     .then(accumulator => invokeAsyncFunc(asyncFunctions[2], reduce, accumulator));
+    let recursiveConvolutionFunc = function (prevPromise, reduce, accumulator, index) {
         let nextPromise;
         if (index === 0) {
-            nextPromise = innerFunc(asyncFunctions[0], reduce, accumulator);
+            nextPromise = invokeAsyncFunc(asyncFunctions[0], reduce, accumulator);
         } else {
             nextPromise = prevPromise
-                .then(accumulator => innerFunc(asyncFunctions[index], reduce, accumulator));
+                .then(accumulator => invokeAsyncFunc(asyncFunctions[index], reduce, accumulator));
         }
-        if (index + 1 === count) {
+        if (index + 1 === asyncFunctions.length) {
             return nextPromise;
         }
-        return recursiveFunc(nextPromise, reduce, accumulator, index + 1);
+        return recursiveConvolutionFunc(nextPromise, reduce, accumulator, index + 1);
     }
 
-    return recursiveFunc(null, reduce, initialValue, 0);
+    // запускаем вычисление
+    return recursiveConvolutionFunc(null, reduce, initialValue, 0);
 }
 
-let reduce = (accumulator, value) => {
-    console.log('reduce');
-    return accumulator + value;
-};
-
-promiseReduce1([fn1, fn2, fn3], reduce, 0).then(console.log);
+promiseReduce(
+    [fn1, fn2, fn3],
+    (accumulator, value) => {
+        console.log('reduce');
+        return accumulator + value;
+    },
+    0)
+    .then(console.log);
