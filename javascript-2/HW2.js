@@ -32,17 +32,17 @@ function promiseReduce(asyncFunctions, reduce, initialValue) {
     // return invokeAsyncFunc(asyncFunctions[0], reduce, accumulator)
     //     .then(accumulator => invokeAsyncFunc(asyncFunctions[1], reduce, accumulator))
     //     .then(accumulator => invokeAsyncFunc(asyncFunctions[2], reduce, accumulator));
-    let recursiveConvolutionFunc = function (prevPromise, reduce, accumulator, index) {
+    let recursiveConvolutionFunc = function (prevPromise, reduce, index) {
         let nextPromise = prevPromise
             .then(accumulator => invokeAsyncFunc(asyncFunctions[index], reduce, accumulator));
         if (index + 1 === asyncFunctions.length) {
             return nextPromise;
         }
-        return recursiveConvolutionFunc(nextPromise, reduce, accumulator, index + 1);
+        return recursiveConvolutionFunc(nextPromise, reduce, index + 1);
     }
     
     // запускаем вычисление
-    return recursiveConvolutionFunc(Promise.resolve(null), reduce, initialValue, 0);
+    return recursiveConvolutionFunc(Promise.resolve(initialValue), reduce, 0);
 }
 
 promiseReduce(
