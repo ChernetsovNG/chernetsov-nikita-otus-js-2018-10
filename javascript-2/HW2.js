@@ -15,31 +15,6 @@ var fn3 = () => new Promise(resolve => {
     setTimeout(() => resolve(3), 350)
 });
 
-// Функция, которая дожидается выполнения всех асинхронных функций, а затем выполняет свёртку
-function promiseReduceSimple(asyncFunctions, reduce, initialValue) {
-    return new Promise((resolve) => {
-        let asyncFunctionsCount = asyncFunctions.length;
-        let asyncFunctionsResults = new Array(asyncFunctionsCount);
-        let asyncFunctionsDoneCount = 0;
-
-        asyncFunctions.forEach((asyncFunction, index) => {
-            asyncFunction().then(result => {
-                asyncFunctionsResults[index] = result;
-                asyncFunctionsDoneCount++;
-                if (asyncFunctionsDoneCount === asyncFunctionsCount) {
-                    // Все асинхронные функции отработали и вернули результат => выполняем свёртку
-                    let accumulator = initialValue;
-                    asyncFunctionsResults.forEach(result => {
-                        accumulator = reduce(accumulator, result);
-                    });
-                    // возвращаем Promise с результатом свёртки
-                    resolve(accumulator);
-                }
-            });
-        });
-    });
-}
-
 // а эта более честная функция - решение ДЗ
 function promiseReduce(asyncFunctions, reduce, initialValue) {
     if (asyncFunctions.length === 0) {
@@ -47,13 +22,10 @@ function promiseReduce(asyncFunctions, reduce, initialValue) {
     }
 
     // Эта функция выполняет асинхронную функцию, после чего выполняет свёртку
-    // и возвращает новое значение аккумулятора
+    // и возвращает Promise с новым значением аккумулятора
     let invokeAsyncFunc = function (asyncFunction, reduce, accumulator) {
-        return new Promise((resolve) => {
-            asyncFunction()
-                .then(result => reduce(accumulator, result))
-                .then(accumulator => resolve(accumulator));
-        });
+        return asyncFunction()
+            .then(result => reduce(accumulator, result));
     }
 
     // Рекурсивная функция свёртки должна отработать примерно так (на примере 3-х функций):
@@ -61,21 +33,16 @@ function promiseReduce(asyncFunctions, reduce, initialValue) {
     //     .then(accumulator => invokeAsyncFunc(asyncFunctions[1], reduce, accumulator))
     //     .then(accumulator => invokeAsyncFunc(asyncFunctions[2], reduce, accumulator));
     let recursiveConvolutionFunc = function (prevPromise, reduce, accumulator, index) {
-        let nextPromise;
-        if (index === 0) {
-            nextPromise = invokeAsyncFunc(asyncFunctions[0], reduce, accumulator);
-        } else {
-            nextPromise = prevPromise
-                .then(accumulator => invokeAsyncFunc(asyncFunctions[index], reduce, accumulator));
-        }
+        let nextPromise = prevPromise
+            .then(accumulator => invokeAsyncFunc(asyncFunctions[index], reduce, accumulator));
         if (index + 1 === asyncFunctions.length) {
             return nextPromise;
         }
         return recursiveConvolutionFunc(nextPromise, reduce, accumulator, index + 1);
     }
-
+    
     // запускаем вычисление
-    return recursiveConvolutionFunc(null, reduce, initialValue, 0);
+    return recursiveConvolutionFunc(Promise.resolve(null), reduce, initialValue, 0);
 }
 
 promiseReduce(
