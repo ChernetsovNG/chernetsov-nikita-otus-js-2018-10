@@ -1,19 +1,26 @@
+'use strict'
+
 const http = require('http');
 const port = 3000;
 
-let requestCount = 0;
+let count = 0;
 
-const requestHandler = (request, response) => {
-  console.log(request.url);
-  requestCount++;
-  response.end(`Hello Node.js Server!. Request number: ${requestCount}`);
-}
+const handler = (req, res) => {
+    setTimeout(() => {
+        console.log(req.method);
+        console.log(Date.now(), 'Server get incoming request');
+        console.log(Date.now(), 'Server send response');
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.write('Hello');
+        res.end();
+    }, 1000);
+};
 
-const server = http.createServer(requestHandler);
+const server = http.createServer(handler);
 
 server.listen(port, (err) => {
-  if (err) {
-    return console.log('something bad happened', err);
-  }
-  console.log(`server is listening on ${port}`);
+    if (err) {
+        return console.log('something bad happened', err);
+    }
+    console.log(`server is listening on ${port}`);
 });
