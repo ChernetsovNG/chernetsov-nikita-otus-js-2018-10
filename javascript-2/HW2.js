@@ -6,8 +6,9 @@ var fn1 = () => {
 };
 
 var fn2 = () => new Promise(resolve => {
-    console.log('fn2')
-    setTimeout(() => resolve(2), 1000)
+    console.log('fn2');
+    throw new Error("Error in fn2");
+    setTimeout(() => resolve(2), 1000);
 });
 
 var fn3 = () => new Promise(resolve => {
@@ -25,7 +26,11 @@ function promiseReduce(asyncFunctions, reduce, initialValue) {
     // и возвращает Promise с новым значением аккумулятора
     let invokeAsyncFunc = function (asyncFunction, reduce, accumulator) {
         return asyncFunction()
-            .then(result => reduce(accumulator, result));
+            .then(result => reduce(accumulator, result))
+            .catch(error => {
+                console.log(error);
+                return accumulator;
+            });
     }
 
     // Рекурсивная функция свёртки должна отработать примерно так (на примере 3-х функций):
